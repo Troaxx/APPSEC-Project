@@ -5,36 +5,73 @@ const validator = require("validator");
 const User = require("../Database/user");
 
 // Register function
-const register = async (req, role, res) => {
+const register = async (userData, role, res) => {
     try {
-        const { username, password, email } = req;
-
-        if (username === "") return res.status(400).json({ message: "Please enter a username." });
+        const { username, password, email } = userData;
+        
+        // Username validation
+        if (!username || username === "") {
+            return res.status(400).json({ message: "Please enter a username." });
+        }
+        
+        let usernameNotTaken = await validateUsername(username);
+        if (!usernameNotTaken) {
+            return res.status(400).json({
+                message: `Username is already registered.`
+            });
+        }
         const sanitizedUsername = validator.escape(username);
 
-        if (!validator.isEmail(email)) return res.status(400).json({ message: "Please enter a valid email." });
+        // Email validation
+        if (!email || !validator.isEmail(email)) {
+            return res.status(400).json({ message: "Please enter a valid email." });
+        }
+        
         const sanitizedEmail = validator.normalizeEmail(email);
+        let emailNotRegistered = await validateEmail(email);
+        if (!emailNotRegistered) {
+            return res.status(400).json({
+                message: `Email is already registered.`
+            });
+        }
 
-        if (password === "") return res.status(400).json({ message: "Please enter a password." });
+        // Password validation
+        if (!password || password === "") {
+            return res.status(400).json({ message: "Please enter a password." });
+        }
         const sanitizedPassword = validator.trim(password);
         const hashedPassword = bcrypt.hashSync(sanitizedPassword, 12);
 
+        // Role validation
         const accountRoles = ["president", "treasurer", "secretary", "member"];
-        if (!accountRoles.includes(role.toLowerCase())) return res.status(400).json({ message: "Please enter a valid account type." });
+        if (!role || !accountRoles.includes(role.toLowerCase())) {
+            return res.status(400).json({ message: "Please enter a valid account type." });
+        }
 
         const newUser = new User({ 
             name: sanitizedUsername,
             email: sanitizedEmail,
-            role: role,
+            role: role.toLowerCase(),
             password: hashedPassword
         });
 
         await newUser.save();
-        return res.json({ message: "You are now registered." });
+        return res.status(201).json({ message: "You are now registered." });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: err.message });
     }
+};
+
+// Validation functions
+const validateUsername = async (username) => {
+    const user = await User.findOne({ name: username });
+    return user ? false : true;
+};
+
+const validateEmail = async (email) => {
+    const user = await User.findOne({ email });
+    return user ? false : true;
 };
 
 // Login function
