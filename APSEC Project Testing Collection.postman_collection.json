@@ -1,0 +1,1631 @@
+{
+	"info": {
+		"_postman_id": "013b4332-295b-4bc7-9780-5523b56d7edb",
+		"name": "APSEC Project Testing Collection",
+		"description": "This is a postman collection for APSEC Project Testing. It should test the following:\n1. Register API Success\n2. Register API Failure (Duplicate Username)\n3. Register API Failure (Duplicate Email)\n4. Login API Success\n5. Login API Failure (Wrong Email)\n6. Login API Failure (Wrong Password)\n7. Access Protected URL Success\n8. Access Protected URL Failure - (no token)\n9. Access Protected URL Failure - (wrong token)\n10. Access Protected URL Failure - (Valid token from other role)\n11. Logout API Success\n\nThis should be done for all 4 roles in this application - President, Secretary, Treasurer, Member.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40127182"
+	},
+	"item": [
+		{
+			"name": "President Tests",
+			"item": [
+				{
+					"name": "President - Register API Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-president\",\r\n  \"email\": \"new-president@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-president",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-president"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Register API Failure (Duplicate Username)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-president\",\r\n  \"email\": \"another-president@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-president",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-president"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Register API Failure (Duplicate Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"newer-president\",\r\n  \"email\": \"new-president@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-president",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-president"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Login API Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"const token = responseJson.token;",
+									"pm.collectionVariables.set(\"president_token\", token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"admin@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Login API Failure (Wrong Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"wrong-admin@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Login API Failure (Wrong Password)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"admin@example.com\",\r\n  \"password\": \"wrongpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Access Protected URL Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"president_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/president-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"president-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Access Protected URL Failure - (no token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/president-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"president-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Access Protected URL Failure - (wrong token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/president-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"president-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Access Protected URL Failure - (valid token but from different role)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"member_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/president-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"president-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "President - Logout API Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"president_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/logout",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Secretary Tests",
+			"item": [
+				{
+					"name": "Secretary - Register API Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-secretary\",\r\n  \"email\": \"new-secretary@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-secretary",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-secretary"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Register API Failure (Duplicate Username)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-secretary\",\r\n  \"email\": \"another-secretary@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-secretary",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-secretary"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Register API Failure (Duplicate Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"newer-secretary\",\r\n  \"email\": \"new-secretary@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-secretary",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-secretary"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Login API Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"const token = responseJson.token;",
+									"pm.collectionVariables.set(\"secretary_token\", token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"secretary@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Login API Failure (Wrong Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"wrong-secretary@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Login API Failure (Wrong Password)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"secretary@example.com\",\r\n  \"password\": \"wrongpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Access Protected URL Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"secretary_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/secretary-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"secretary-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Access Protected URL Failure - (no token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/secretary-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"secretary-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Access Protected URL Failure - (wrong token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/secretary-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"secretary-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Access Protected URL Failure - (valid token but from different role)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"member_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/secretary-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"secretary-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Secretary - Logout API Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"secretary_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/logout",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Treasurer Tests",
+			"item": [
+				{
+					"name": "Treasurer - Register API Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-treasurer\",\r\n  \"email\": \"new-treasurer@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-treasurer",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-treasurer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Register API Failure (Duplicate Username)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-treasurer\",\r\n  \"email\": \"another-treasurer@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-treasurer",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-treasurer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Register API Failure (Duplicate Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"newer-treasurer\",\r\n  \"email\": \"new-treasurer@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-treasurer",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-treasurer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Login API Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"const token = responseJson.token;",
+									"pm.collectionVariables.set(\"treasurer_token\", token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"treasurer@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Login API Failure (Wrong Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"wrong-treasurer@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Login API Failure (Wrong Password)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"treasurer@example.com\",\r\n  \"password\": \"wrongpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Access Protected URL Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"treasurer_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/treasurer-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"treasurer-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Access Protected URL Failure - (no token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/treasurer-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"treasurer-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Access Protected URL Failure - (wrong token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/treasurer-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"treasurer-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Access Protected URL Failure - (valid token but from different role)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"member_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/treasurer-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"treasurer-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Treasurer - Logout API Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"treasurer_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/logout",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Member Tests",
+			"item": [
+				{
+					"name": "Member - Register API Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-member\",\r\n  \"email\": \"new-member@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-member",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-member"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Register API Failure (Duplicate Username)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"new-member\",\r\n  \"email\": \"another-member@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-member",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-member"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Register API Failure (Duplicate Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"newer-member\",\r\n  \"email\": \"new-member@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/register-member",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"register-member"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Login API Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"const token = responseJson.token;",
+									"pm.collectionVariables.set(\"member_token\", token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"member@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Login API Failure (Wrong Email)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"wrong-member@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Login API Failure (Wrong Password)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"member@example.com\",\r\n  \"password\": \"wrongpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Access Protected URL Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"member_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/member-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"member-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Access Protected URL Failure - (no token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/member-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"member-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Access Protected URL Failure - (wrong token)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:5000/member-protected",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"member-protected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member - Logout API Success",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get(\"member_token\");",
+									"if (token) {",
+									"    const authValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;",
+									"    pm.request.headers.add({",
+									"        key: \"Authorization\",",
+									"        value: authValue",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/logout",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Public Access",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:5000/public",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"public"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "president_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "secretary_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "treasurer_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "member_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

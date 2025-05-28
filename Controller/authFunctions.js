@@ -64,6 +64,7 @@ const register = async (userData, role, res) => {
 };
 
 // Validation functions
+//findOne = mongo function to find a user by a given field
 const validateUsername = async (username) => {
     const user = await User.findOne({ name: username });
     return user ? false : true;
@@ -110,7 +111,7 @@ const login = async (email, password) => {
                     }
 
                     resolve({
-                        token: `Bearer ${token}`,
+                        token: token,  // Return just the token without "Bearer " prefix
                         user: {
                             id: user._id,
                             role: user.role,
