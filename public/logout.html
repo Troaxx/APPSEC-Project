@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certis Cisco Logout</title>
+</head>
+<body>
+    <h1>Certis Cisco Logout</h1>
+    <p>Logging you out...</p>
+    <p>You will be redirected to the login page.</p>
+    <a href="/login.html">Click here if not redirected</a>
+    
+    <!-- Load auth script and handle logout -->
+    <script src="/js/auth.js"></script>
+    <script>
+        // Clear authentication and redirect
+        authManager.clearAuth();
+        
+        // Redirect after a brief delay
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 2000);
+    </script>
+</body>
+</html>

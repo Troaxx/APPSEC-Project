@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certis Cisco Home</title>
+</head>
+<body>
+    <h1>Certis Cisco Home</h1>
+    <p>Welcome to the Certis Cisco Home page.</p>
+    <a href="/president.html">President</a>
+    <a href="/secretary.html">Secretary</a>
+    <a href="/treasurer.html">Treasurer</a>
+    <a href="/member.html">Member</a>
+    <a href="/logout.html">Logout</a>
+    
+    <!-- Load auth script and protect this page -->
+    <script src="/js/auth.js"></script>
+    <script>
+        // Protect this page - all logged-in users can access
+        authManager.initPageAuth(['member', 'treasurer', 'secretary', 'president']);
+    </script>
+</body>
+</html>
