@@ -8,14 +8,9 @@
 <body>
     <h1>President Protected Page</h1>
     <p>This page is available for only the president. Public domain is not allowed to access this page.</p>
-    <a href="/home.html">Home</a>
+    <a href="/home">Home</a>
     <a href="/logout.html">Logout</a>
-    
-    <!-- Load auth script and protect this page -->
-    <script src="/js/auth.js"></script>
-    <script>
-        // Protect this page - only presidents can access
-        authManager.initPageAuth(['president']);
-    </script>
+
+    <noscript>enable javascript to access this page</noscript>
 </body>
 </html>

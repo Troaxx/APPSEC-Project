@@ -23,11 +23,12 @@ class AuthManager {
         return !!this.getToken();
     }
     
-    // Use existing backend protected routes to verify authentication
+    // Simplified auth verification that checks token and role permissions
     static async verifyAuth(requiredRoles = []) {
         const token = this.getToken();
         const userData = this.getUserData();
         
+        // Check if user has token and user data
         if (!token || !userData) {
             return { valid: false, reason: 'no_token' };
         }
@@ -37,10 +38,11 @@ class AuthManager {
             return { valid: false, reason: 'insufficient_permissions' };
         }
         
+        // Verify token is still valid by making a call to a route the user should have access to
         try {
-            // Select test route based on USER'S actual role (not required roles)
-            let testRoute = '/public'; // Default to public route
+            let testRoute = '/public'; // Default fallback
             
+            // Select route based on user's actual role
             switch(userData.role) {
                 case 'president':
                     testRoute = '/president-protected';

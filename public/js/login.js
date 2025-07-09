@@ -43,19 +43,19 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             // Redirect based on role
             switch(data.user.role) {
                 case 'president':
-                    window.location.href = '/president.html';
+                    window.location.href = '/president';
                     break;
                 case 'secretary':
-                    window.location.href = '/secretary.html';
+                    window.location.href = '/secretary';
                     break;
                 case 'treasurer':
-                    window.location.href = '/treasurer.html';
+                    window.location.href = '/treasurer';
                     break;
                 case 'member':
-                    window.location.href = '/member.html';
+                    window.location.href = '/member';
                     break;
                 default:
-                    window.location.href = '/home.html';
+                    window.location.href = '/home';
             }
         } else {
             messageDiv.innerHTML = `<div class="error">${data.message}</div>`;

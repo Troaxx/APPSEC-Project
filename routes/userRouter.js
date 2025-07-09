@@ -35,6 +35,13 @@ router.post("/login", async (req, res) => {
         // Calling login function from authFunctions.js
         const result = await login(email, password);
         
+        // Set cookie with token for browser navigation
+        res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Only use secure in production
+            maxAge: 2 * 60 * 60 * 1000 // 2 hours
+        });
+        
         // Return token/user data
         res.status(200).json({
             message: "Login successful",
@@ -52,7 +59,25 @@ router.post("/login", async (req, res) => {
 
 // Logout route
 router.post("/logout", async (req, res) => {
+    // Clear the authentication cookie with proper options
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
     return res.status(200).json({ message: "Logout successful" });
+});
+
+// GET logout route for direct navigation
+router.get("/logout", async (req, res) => {
+    // Clear the authentication cookie with proper options
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+    // Redirect to logout page
+    res.redirect('/logout.html');
 });
 
 // Public unprotected route
