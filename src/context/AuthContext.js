@@ -46,44 +46,44 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      console.log('🔍 Starting login process...');
-      console.log('📧 Email:', email);
-      console.log('🔑 Password length:', password.length);
+      console.log('Starting login process...');
+      console.log('Email:', email);
+      console.log('Password length:', password.length);
       
       // Get reCAPTCHA token
       const recaptchaToken = await new Promise((resolve) => {
-        console.log('🔄 Getting reCAPTCHA token...');
-        console.log('🔍 window.grecaptcha exists:', !!window.grecaptcha);
+        console.log('Getting reCAPTCHA token...');
+        console.log('window.grecaptcha exists:', !!window.grecaptcha);
         
         if (window.grecaptcha && window.grecaptcha.execute) {
-          console.log('✅ reCAPTCHA loaded, executing...');
+          console.log('reCAPTCHA loaded, executing...');
           // Use your actual site key from environment
           const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
-          console.log('🔑 Site key configured:', !!siteKey);
+          console.log('Site key configured:', !!siteKey);
           
           if (siteKey) {
             window.grecaptcha.execute(siteKey, {
               action: 'login'
             }).then((token) => {
-              console.log('✅ reCAPTCHA token received:', token ? 'YES' : 'NO');
+              console.log('reCAPTCHA token received:', token ? 'YES' : 'NO');
               resolve(token);
             }).catch((error) => {
-              console.error('❌ reCAPTCHA error:', error);
+              console.error('reCAPTCHA error:', error);
               resolve('no-recaptcha-token');
             });
           } else {
-            console.log('⚠️ No site key, using fallback');
+            console.log('No site key, using fallback');
             resolve('no-recaptcha-token');
           }
         } else {
-          console.log('⚠️ reCAPTCHA not loaded, using fallback');
+          console.log('reCAPTCHA not loaded, using fallback');
           resolve('no-recaptcha-token');
         }
       });
 
-      console.log('📤 Sending login request to backend...');
-      console.log('🌐 Request URL:', '/login');
-      console.log('📦 Request data:', { email, password: '***', recaptchaToken: recaptchaToken ? 'YES' : 'NO' });
+      console.log('Sending login request to backend...');
+      console.log('Request URL:', '/login');
+      console.log('Request data:', { email, password: '***', recaptchaToken: recaptchaToken ? 'YES' : 'NO' });
       
       const response = await axios.post('/login', {
         email,
@@ -91,18 +91,18 @@ export function AuthProvider({ children }) {
         recaptchaToken
       });
 
-      console.log('📥 Backend response received');
-      console.log('📊 Response status:', response.status);
-      console.log('📋 Response data:', response.data);
+      console.log('Backend response received');
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
 
       const { data } = response;
 
       if (data.requires2FA) {
-        console.log('🔐 2FA required, redirecting...');
+        console.log('2FA required, redirecting...');
         return { requires2FA: true, userId: data.userId, message: data.message };
       }
 
-      console.log('✅ Login successful, storing data...');
+      console.log('Login successful, storing data...');
       // Store authentication data
       localStorage.setItem('token', data.token);
       localStorage.setItem('userData', JSON.stringify(data.user));
@@ -114,11 +114,11 @@ export function AuthProvider({ children }) {
       
       return { success: true, user: data.user };
     } catch (error) {
-      console.error('❌ Login error occurred');
-      console.error('🔍 Error details:', error);
-      console.error('📊 Error response:', error.response);
-      console.error('📋 Error data:', error.response?.data);
-      console.error('🌐 Error status:', error.response?.status);
+      console.error('Login error occurred');
+      console.error('Error details:', error);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       throw new Error(error.response?.data?.error || error.response?.data?.message || 'Login failed');
     }
   };

@@ -172,13 +172,27 @@ const login = async (email, password) => {
             user.loginAttempts.count += 1;
             user.loginAttempts.lastAttempt = new Date();
             
+            // Calculate remaining attempts
+            const remainingAttempts = Math.max(0, 5 - user.loginAttempts.count);
+            
             // Lock account after 5 failed attempts for 15 minutes
             if (user.loginAttempts.count >= 5) {
                 user.loginAttempts.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+                await user.save();
+                throw new Error("Account locked due to too many failed attempts. Please try again in 15 minutes.");
             }
             
             await user.save();
-            throw new Error("Invalid email or password.");
+            
+            // Throw error with remaining attempts information
+            const errorMessage = remainingAttempts > 0 
+                ? `Invalid email or password. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`
+                : "Invalid email or password.";
+            
+            const error = new Error(errorMessage);
+            error.remainingAttempts = remainingAttempts;
+            error.failedAttempts = user.loginAttempts.count;
+            throw error;
         }
 
         // Reset failed attempts on successful password verification
@@ -364,26 +378,61 @@ const requestPasswordReset = async (email) => {
             throw new Error("User not found");
         }
 
-        // Generate reset token
-        const resetToken = jwt.sign(
-            { user_id: user._id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '1 hour' }
-        );
-
-        // Store reset token in user document
-        user.passwordResetToken = resetToken;
-        user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        // Generate a simple verification code (6 digits)
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store verification code in user document with expiration
+        user.passwordResetCode = verificationCode;
+        user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         await user.save();
 
-        // Send email with reset link
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3002'}/reset-password?token=${resetToken}`;
-        
-        await emailService.sendPasswordResetEmail(user.email, resetLink, user.name);
+        // Send email with verification code
+        await emailService.sendPasswordResetCode(user.email, verificationCode, user.name);
         
         return { 
             success: true, 
-            message: "Password reset link sent to your email" 
+            message: "Verification code sent to your email",
+            email: email // Return email for frontend to use in next step
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to verify reset code and generate reset token
+const verifyResetCode = async (email, code) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Check if code matches and is not expired
+        if (user.passwordResetCode !== code) {
+            throw new Error("Invalid verification code");
+        }
+
+        if (user.passwordResetExpires < new Date()) {
+            throw new Error("Verification code has expired");
+        }
+
+        // Generate reset token for password change
+        const resetToken = jwt.sign(
+            { user_id: user._id, email: user.email, purpose: 'password_reset' },
+            process.env.JWT_SECRET,
+            { expiresIn: '15 minutes' }
+        );
+
+        // Store reset token and clear verification code
+        user.passwordResetToken = resetToken;
+        user.passwordResetCode = null;
+        user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        await user.save();
+
+        return { 
+            success: true, 
+            message: "Code verified successfully",
+            resetToken: resetToken
         };
     } catch (err) {
         throw err;
@@ -395,6 +444,11 @@ const resetPassword = async (token, newPassword) => {
     try {
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Check if token is for password reset
+        if (decoded.purpose !== 'password_reset') {
+            throw new Error("Invalid token purpose");
+        }
         
         const user = await User.findById(decoded.user_id);
         if (!user) {
@@ -479,6 +533,7 @@ module.exports = {
     getLockoutStatus,
     clearAccountLockout,
     requestPasswordReset,
+    verifyResetCode,
     resetPassword,
     validatePasswordPolicy
 };

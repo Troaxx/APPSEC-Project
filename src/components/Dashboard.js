@@ -111,7 +111,6 @@ function Dashboard() {
               <p><strong>Name:</strong> {user?.name}</p>
               <p><strong>Email:</strong> {user?.email}</p>
               <p><strong>Role:</strong> {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}</p>
-              <p><strong>Member ID:</strong> {user?.id}</p>
               <div className="info-card">
                 <p style={{ margin: 0, fontSize: '0.9rem' }}>{getRoleDescription(user?.role)}</p>
               </div>

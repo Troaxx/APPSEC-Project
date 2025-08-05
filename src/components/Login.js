@@ -9,6 +9,7 @@ function Login() {
     password: ''
   });
   const [error, setError] = useState('');
+  const [remainingAttempts, setRemainingAttempts] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lockoutStatus, setLockoutStatus] = useState(null);
   const [lockoutTimer, setLockoutTimer] = useState(0);
@@ -63,11 +64,17 @@ function Login() {
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error and remaining attempts when user starts typing
+    if (error) {
+      setError('');
+      setRemainingAttempts(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setRemainingAttempts(null);
     setLoading(true);
 
     try {
@@ -87,6 +94,28 @@ function Login() {
       }
     } catch (err) {
       setError(err.message);
+      
+      // Check if the error response contains remaining attempts information
+      if (err.response?.data?.remainingAttempts !== undefined) {
+        setRemainingAttempts(err.response.data.remainingAttempts);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setLoading(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response = await axios.post('/request-password-reset', {
+        email: user.email
+      });
+      setMessage('Password reset link sent to your email. Please check your inbox.');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to send password reset email');
     } finally {
       setLoading(false);
     }
@@ -100,7 +129,21 @@ function Login() {
         </div>
         
         <div className="card-body">
-          {error && <div className="message error">{error}</div>}
+          {error && (
+            <div className="message error">
+              {error}
+              {remainingAttempts !== null && remainingAttempts > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.9rem', color: '#ff6b6b' }}>
+                  ⚠️ {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining before account lockout
+                </div>
+              )}
+              {remainingAttempts === 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.9rem', color: '#ff6b6b' }}>
+                  🔒 Account will be locked after next failed attempt
+                </div>
+              )}
+            </div>
+          )}
           
           {lockoutStatus?.isLocked && (
             <div className="message warning">
@@ -156,6 +199,10 @@ function Login() {
           
           <div className="text-center mt-20">
             <p>Don't have an account? <Link to="/register">Register here</Link></p>
+          </div>
+
+          <div className="text-center mt-20">
+            <p>Forgot Password? <Link to="/reset-password">Reset Password</Link></p>
           </div>
           
           <div className="info-card mt-20">

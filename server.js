@@ -1,16 +1,19 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const cookieParser = require('cookie-parser');
+const path = require("path");
+const fs = require("fs");
+const cookieParser = require("cookie-parser");
 
 const userRouter = require('./routes/userRouter')
 const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.BACKEND_PORT || 3001;
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
 
 app.use(express.json());
 
@@ -20,23 +23,23 @@ app.use(express.urlencoded({ extended: true }));
 // Add cookie parser
 app.use(cookieParser());
 
-// Note: Protected routes are now handled by React Router in the frontend
-// Role-based access control is implemented in React components
-
-// API routes
-app.use('', userRouter);
-
-// Serve React app
-app.use(express.static(path.join(__dirname, 'build')));
-
-// Handle React routing - send all non-API requests to React
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// Enable CORS for frontend
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
 });
 
-//This line of code is importing the userRouter module from the './routes/userRouter' file.
-//Remember to uncomment this line when working on userRouter.js
-// const userRouter = require('./routes/userRouter')
+// API routes - no prefix
+app.use('', userRouter);
+
+
 
 console.log(process.env.DB_CONNECT)
 
@@ -45,8 +48,8 @@ mongoose.set('strictQuery', true);
 
 app.listen(PORT, () =>
 {
-    console.log(`Server started on port ${PORT}`);
-    console.log(`React app will be served from: http://localhost:${PORT}`);
+    console.log(`Backend server started on port ${PORT}`);
+    console.log(`API available at: http://localhost:${PORT}`);
 })
 
 mongoose.connect(process.env.DB_CONNECT)

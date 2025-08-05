@@ -53,6 +53,7 @@ const UserSchema = new Schema(
         
         // Password reset fields
         passwordResetToken: String,
+        passwordResetCode: String,
         passwordResetExpires: Date
     },
     {timestamps: true}

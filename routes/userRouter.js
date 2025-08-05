@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { register, login, verify2FA, resendVerificationCode, toggle2FA, getLockoutStatus, clearAccountLockout, requestPasswordReset, resetPassword } = require("../Controller/authFunctions");
+const { register, login, verify2FA, resendVerificationCode, toggle2FA, getLockoutStatus, clearAccountLockout, requestPasswordReset, verifyResetCode, resetPassword } = require("../Controller/authFunctions");
 const authMiddleware = require("../middleware/authMiddleware");
 const { loginLimiter, verifyRecaptcha } = require("../middleware/securityMiddleware");
 
@@ -60,6 +60,15 @@ router.post("/login", loginLimiter, verifyRecaptcha, async (req, res) => {
             user: result.user
         });
     } catch (error) {
+        // Handle login errors with remaining attempts information
+        if (error.remainingAttempts !== undefined) {
+            return res.status(401).json({ 
+                error: error.message,
+                remainingAttempts: error.remainingAttempts,
+                failedAttempts: error.failedAttempts
+            });
+        }
+        
         res.status(401).json({ error: error.message || "Authentication failed" });
     }
 });
@@ -167,6 +176,23 @@ router.post("/request-password-reset", async (req, res) => {
     }
 });
 
+// Verify reset code route
+router.post("/verify-reset-code", async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        if (!email || !code) {
+            return res.status(400).json({ error: "Email and verification code are required." });
+        }
+        
+        const result = await verifyResetCode(email, code);
+        
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message || "Failed to verify reset code" });
+    }
+});
+
 // Reset password route
 router.post("/reset-password", async (req, res) => {
     try {
@@ -223,4 +249,4 @@ router.get("/president-protected", authMiddleware(["president"]), (req, res) => 
     return res.status(200).json({ message: "President protected route accessed" });
 });
 
-module.exports = router;
+module.exports = router; 
