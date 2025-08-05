@@ -10,7 +10,7 @@ const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
@@ -20,58 +20,19 @@ app.use(express.urlencoded({ extended: true }));
 // Add cookie parser
 app.use(cookieParser());
 
-// Protected routes for role-based pages (MUST come before static middleware)
-app.get('/president', authMiddleware(['president']), (req, res) => {
-    const filePath = path.join(__dirname, 'protected', 'president.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Page not found');
-    }
-});
+// Note: Protected routes are now handled by React Router in the frontend
+// Role-based access control is implemented in React components
 
-app.get('/secretary', authMiddleware(['secretary', 'president']), (req, res) => {
-    const filePath = path.join(__dirname, 'protected', 'secretary.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Page not found');
-    }
-});
-
-app.get('/treasurer', authMiddleware(['treasurer', 'secretary', 'president']), (req, res) => {
-    const filePath = path.join(__dirname, 'protected', 'treasurer.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Page not found');
-    }
-});
-
-app.get('/member', authMiddleware(['member', 'treasurer', 'secretary', 'president']), (req, res) => {
-    const filePath = path.join(__dirname, 'protected', 'member.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Page not found');
-    }
-});
-
-app.get('/home', authMiddleware(['member', 'treasurer', 'secretary', 'president']), (req, res) => {
-    const filePath = path.join(__dirname, 'protected', 'home.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Page not found');
-    }
-});
-
-// Serve only public files as static (login, register, logout, css, js) - AFTER protected routes
-app.use(express.static(path.join(__dirname, 'public'), {
-    index: 'login.html'
-}));
-
+// API routes
 app.use('', userRouter);
+
+// Serve React app
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Handle React routing - send all non-API requests to React
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 //This line of code is importing the userRouter module from the './routes/userRouter' file.
 //Remember to uncomment this line when working on userRouter.js
@@ -84,11 +45,12 @@ mongoose.set('strictQuery', true);
 
 app.listen(PORT, () =>
 {
-    console.log(`Frontend Server started on port ${PORT}`);
-    console.log(`Click here to access login page: http://localhost:${PORT}/login.html`);
+    console.log(`Server started on port ${PORT}`);
+    console.log(`React app will be served from: http://localhost:${PORT}`);
 })
 
 mongoose.connect(process.env.DB_CONNECT)
     .then(() => {
         console.log("Connected to MongoDB");
     })
+    

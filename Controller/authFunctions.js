@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const validator = require("validator");
 const User = require("../Database/user");
+const emailService = require("../services/emailService");
 
 // Register function
 const register = async (userData, role, res) => {
@@ -35,10 +36,17 @@ const register = async (userData, role, res) => {
             });
         }
 
-        // Password validation
+        // Password validation with policy
         if (!password || password === "") {
             return res.status(400).json({ message: "Please enter a password." });
         }
+        
+        // Check password policy
+        const passwordCheck = validatePasswordPolicy(password);
+        if (!passwordCheck.isValid) {
+            return res.status(400).json({ message: passwordCheck.message });
+        }
+        
         const sanitizedPassword = validator.trim(password);
         const hashedPassword = bcrypt.hashSync(sanitizedPassword, 12);
 
@@ -75,53 +83,127 @@ const validateEmail = async (email) => {
     return user ? false : true;
 };
 
-// Login function
+// Simple password policy validation
+const validatePasswordPolicy = (password) => {
+    // Minimum 8 characters
+    if (password.length < 8) {
+        return { isValid: false, message: "Password must be at least 8 characters long" };
+    }
+    
+    // Must contain uppercase letter
+    if (!/[A-Z]/.test(password)) {
+        return { isValid: false, message: "Password must contain at least one uppercase letter" };
+    }
+    
+    // Must contain lowercase letter
+    if (!/[a-z]/.test(password)) {
+        return { isValid: false, message: "Password must contain at least one lowercase letter" };
+    }
+    
+    // Must contain number
+    if (!/\d/.test(password)) {
+        return { isValid: false, message: "Password must contain at least one number" };
+    }
+    
+    // Must contain special character
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        return { isValid: false, message: "Password must contain at least one special character (!@#$%^&*)" };
+    }
+    
+    return { isValid: true };
+};
+
+// Check if account is locked
+// This function checks if the account is locked and if it is, it throws an error
+const checkAccountLockout = async (user) => {
+    if (user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil > new Date()) {
+        const remainingTime = Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 60000);
+        throw new Error(`Account is locked. Please try again in ${remainingTime} minutes.`);
+    }
+    
+    // Reset lockout if expired
+    if (user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil <= new Date()) {
+        user.loginAttempts.count = 0;
+        user.loginAttempts.lockedUntil = null;
+        await user.save();
+    }
+};
+
+// Function to get lockout status for a user
+const getLockoutStatus = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const isLocked = user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil > new Date();
+        const remainingTime = isLocked 
+            ? Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 1000) // seconds
+            : 0;
+        
+        return {
+            isLocked,
+            remainingTime,
+            failedAttempts: user.loginAttempts.count,
+            lockedUntil: user.loginAttempts.lockedUntil
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Enhanced login function with security features
 const login = async (email, password) => {
     try {
         // Find the user by email
         const user = await User.findOne({ email });
         if (!user) {
-            throw new Error("User not found. Invalid login credentials.");
+            throw new Error("Invalid email or password.");
         }
+
+        // Check account lockout
+        await checkAccountLockout(user);
 
         // Check if the password matches
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            throw new Error("Incorrect password.");
+            // Increment failed attempts
+            user.loginAttempts.count += 1;
+            user.loginAttempts.lastAttempt = new Date();
+            
+            // Lock account after 5 failed attempts for 15 minutes
+            if (user.loginAttempts.count >= 5) {
+                user.loginAttempts.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+            }
+            
+            await user.save();
+            throw new Error("Invalid email or password.");
         }
 
-        // Create JWT payload
-        const payload = {
-            user_id: user._id,
-            role: user.role,
-            email: user.email,
-            name: user.name
+        // Reset failed attempts on successful password verification
+        user.loginAttempts.count = 0;
+        user.loginAttempts.lockedUntil = null;
+        await user.save();
+
+        // Always generate 2FA code (required for all logins)
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationCode = {
+            code: verificationCode,
+            expiresAt: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes
+            resendCount: 0,
+            lastResendTime: null
         };
-
-        // Sign token and return promise
-        return new Promise((resolve, reject) => {
-            jwt.sign(
-                payload,
-                process.env.JWT_SECRET,
-                { expiresIn: "2 hours" },
-                (err, token) => {
-                    if (err) {
-                        console.error("JWT Error Details:", err);
-                        reject(new Error("Error signing token."));
-                    }
-
-                    resolve({
-                        token: token,  // Return just the token without "Bearer " prefix
-                        user: {
-                            id: user._id,
-                            role: user.role,
-                            email: user.email,
-                            name: user.name
-                        }
-                    });
-                }
-            );
-        });
+        await user.save();
+        
+        // Send email with verification code
+        await emailService.sendVerificationCode(user.email, verificationCode, user.name);
+        
+        return { 
+            requires2FA: true, 
+            userId: user._id,
+            message: "Verification code sent to your email." 
+        };
     } catch (err) {
         throw err;
     }
@@ -141,9 +223,262 @@ const logout = async (req, res) => {
     }
 };
 
+// 2FA verification function
+const verify2FA = async (userId, code) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Check if verification code exists and is not expired
+        if (!user.verificationCode || user.verificationCode.expiresAt < new Date()) {
+            throw new Error("Verification code expired. Please login again.");
+        }
+
+        // Check if the code matches
+        if (user.verificationCode.code !== code) {
+            throw new Error("Invalid verification code");
+        }
+
+        // Clear verification code
+        user.verificationCode = null;
+        await user.save();
+
+        // Generate JWT token
+        const payload = {
+            user_id: user._id,
+            role: user.role,
+            email: user.email,
+            name: user.name
+        };
+
+        return new Promise((resolve, reject) => {
+            jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: "2 hours" },
+                (err, token) => {
+                    if (err) {
+                        reject(new Error("Error signing token."));
+                    }
+                    resolve({
+                        token: token,
+                        user: {
+                            id: user._id,
+                            role: user.role,
+                            email: user.email,
+                            name: user.name
+                        }
+                    });
+                }
+            );
+        });
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to resend verification code
+const resendVerificationCode = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Check if user has a verification code
+        if (!user.verificationCode) {
+            throw new Error("No verification code found. Please login again.");
+        }
+
+        // Check if code is expired
+        if (user.verificationCode.expiresAt < new Date()) {
+            throw new Error("Verification code expired. Please login again.");
+        }
+
+        // Check resend count (max 3 times)
+        if (user.verificationCode.resendCount >= 3) {
+            throw new Error("Maximum resend attempts reached. Please login again.");
+        }
+
+        // Check if 45 seconds have passed since last resend
+        if (user.verificationCode.lastResendTime) {
+            const timeSinceLastResend = Date.now() - user.verificationCode.lastResendTime.getTime();
+            if (timeSinceLastResend < 45000) { // 45 seconds
+                const remainingTime = Math.ceil((45000 - timeSinceLastResend) / 1000);
+                throw new Error(`Please wait ${remainingTime} seconds before resending.`);
+            }
+        }
+
+        // Generate new verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationCode = {
+            code: verificationCode,
+            expiresAt: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes
+            resendCount: user.verificationCode.resendCount + 1,
+            lastResendTime: new Date()
+        };
+        await user.save();
+        
+        // Send email with new verification code
+        await emailService.sendVerificationCode(user.email, verificationCode, user.name);
+        
+        return { 
+            success: true, 
+            message: "New verification code sent to your email.",
+            resendCount: user.verificationCode.resendCount
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to clear account lockout
+const clearAccountLockout = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
+        
+        user.loginAttempts.count = 0;
+        user.loginAttempts.lockedUntil = null;
+        user.loginAttempts.lastAttempt = null;
+        await user.save();
+        
+        return { 
+            success: true, 
+            message: `Account lockout cleared for ${email}` 
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to request password reset
+const requestPasswordReset = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Generate reset token
+        const resetToken = jwt.sign(
+            { user_id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1 hour' }
+        );
+
+        // Store reset token in user document
+        user.passwordResetToken = resetToken;
+        user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        await user.save();
+
+        // Send email with reset link
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3002'}/reset-password?token=${resetToken}`;
+        
+        await emailService.sendPasswordResetEmail(user.email, resetLink, user.name);
+        
+        return { 
+            success: true, 
+            message: "Password reset link sent to your email" 
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to reset password with token
+const resetPassword = async (token, newPassword) => {
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const user = await User.findById(decoded.user_id);
+        if (!user) {
+            throw new Error("Invalid reset token");
+        }
+
+        // Check if token is expired
+        if (user.passwordResetExpires < new Date()) {
+            throw new Error("Reset token has expired");
+        }
+
+        // Check if token matches
+        if (user.passwordResetToken !== token) {
+            throw new Error("Invalid reset token");
+        }
+
+        // Validate new password
+        const passwordCheck = validatePasswordPolicy(newPassword);
+        if (!passwordCheck.isValid) {
+            throw new Error(passwordCheck.message);
+        }
+
+        // Hash new password
+        const hashedPassword = bcrypt.hashSync(newPassword, 12);
+
+        // Update password and clear reset token
+        user.password = hashedPassword;
+        user.passwordResetToken = null;
+        user.passwordResetExpires = null;
+        user.passwordChangedAt = new Date();
+        
+        // Add to password history
+        user.passwordHistory.push({
+            password: hashedPassword,
+            changedAt: new Date()
+        });
+
+        // Keep only last 5 passwords in history
+        if (user.passwordHistory.length > 5) {
+            user.passwordHistory = user.passwordHistory.slice(-5);
+        }
+
+        await user.save();
+        
+        return { 
+            success: true, 
+            message: "Password reset successful" 
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Function to enable/disable 2FA
+const toggle2FA = async (userId, enable) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        
+        user.twoFactorEnabled = enable;
+        await user.save();
+        
+        return { 
+            success: true, 
+            message: `2FA ${enable ? 'enabled' : 'disabled'} successfully` 
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
 // Export functions
 module.exports = {
     register,
     login,
-    logout
+    logout,
+    verify2FA,
+    resendVerificationCode,
+    toggle2FA,
+    getLockoutStatus,
+    clearAccountLockout,
+    requestPasswordReset,
+    resetPassword,
+    validatePasswordPolicy
 };
