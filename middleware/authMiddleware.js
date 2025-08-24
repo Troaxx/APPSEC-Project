@@ -6,14 +6,23 @@ require('dotenv').config();
 const authMiddleware = (allowedRoles) => {
   return (req, res, next) => {
     try {
-      // Get token from header
+      // Get token from header or cookie
+      let token = null;
+      
+      // Check Authorization header first
       const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'No token provided. Authorization denied.' });
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
       }
       
-      // Extract token
-      const token = authHeader.split(' ')[1];
+      // If no token in header, check cookies
+      if (!token && req.cookies && req.cookies.token) {
+        token = req.cookies.token;
+      }
+      
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided. Authorization denied.' });
+      }
       
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
