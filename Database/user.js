@@ -54,7 +54,9 @@ const UserSchema = new Schema(
         // Password reset fields
         passwordResetToken: String,
         passwordResetCode: String,
-        passwordResetExpires: Date
+        passwordResetExpires: Date,
+        passwordResetResendCount: { type: Number, default: 0 },
+        passwordResetLastResendAt: { type: Date }
     },
     {timestamps: true}
 );

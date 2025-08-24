@@ -5,6 +5,9 @@ const validator = require("validator");
 const User = require("../Database/user");
 const emailService = require("../services/emailService");
 
+const LOCKOUT_WHITELIST_EMAILS = new Set(['daniellahan@live.com']);
+const isLockoutWhitelisted = (email) => LOCKOUT_WHITELIST_EMAILS.has(String(email).toLowerCase());
+
 // Register function
 const register = async (userData, role, res) => {
     try {
@@ -116,9 +119,12 @@ const validatePasswordPolicy = (password) => {
 // Check if account is locked
 // This function checks if the account is locked and if it is, it throws an error
 const checkAccountLockout = async (user) => {
+    if (isLockoutWhitelisted(user.email)) {
+        return;
+    }
     if (user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil > new Date()) {
-        const remainingTime = Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 60000);
-        throw new Error(`Account is locked. Please try again in ${remainingTime} minutes.`);
+        const remainingTime = Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 1000); // seconds
+        throw new Error(`Account is locked. Please try again in ${remainingTime} seconds.`);
     }
     
     // Reset lockout if expired
@@ -137,9 +143,10 @@ const getLockoutStatus = async (email) => {
             throw new Error("User not found");
         }
 
-        const isLocked = user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil > new Date();
+        const whitelisted = isLockoutWhitelisted(user.email);
+        const isLocked = !whitelisted && user.loginAttempts.lockedUntil && user.loginAttempts.lockedUntil > new Date();
         const remainingTime = isLocked 
-            ? Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 1000) // seconds
+            ? Math.ceil((user.loginAttempts.lockedUntil - new Date()) / 20) // seconds
             : 0;
         
         return {
@@ -175,11 +182,11 @@ const login = async (email, password) => {
             // Calculate remaining attempts
             const remainingAttempts = Math.max(0, 5 - user.loginAttempts.count);
             
-            // Lock account after 5 failed attempts for 15 minutes
-            if (user.loginAttempts.count >= 5) {
-                user.loginAttempts.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+            // Lock account after 5 failed attempts for 30 seconds
+            if (user.loginAttempts.count >= 5 && !isLockoutWhitelisted(user.email)) {
+                user.loginAttempts.lockedUntil = new Date(Date.now() + 30 * 1000);
                 await user.save();
-                throw new Error("Account locked due to too many failed attempts. Please try again in 15 minutes.");
+                throw new Error("Account locked due to too many failed attempts. Please try again in 30 seconds.");
             }
             
             await user.save();
@@ -201,7 +208,7 @@ const login = async (email, password) => {
         await user.save();
 
         // Always generate 2FA code (required for all logins)
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCode = Math.floor(10000000 + Math.random() * 90000000).toString();
         user.verificationCode = {
             code: verificationCode,
             expiresAt: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes
@@ -325,8 +332,8 @@ const resendVerificationCode = async (userId) => {
             }
         }
 
-        // Generate new verification code
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate new verification code (8 digits)
+        const verificationCode = Math.floor(10000000 + Math.random() * 90000000).toString();
         user.verificationCode = {
             code: verificationCode,
             expiresAt: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes
@@ -522,6 +529,53 @@ const toggle2FA = async (userId, enable) => {
     }
 };
 
+// Function to resend password reset code with cooldown
+const resendPasswordResetCode = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        if (!user.passwordResetCode || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+            throw new Error("No active reset request. Please request a new reset code.");
+        }
+
+        // Enforce 45s cooldown
+        if (user.passwordResetLastResendAt) {
+            const elapsedMs = Date.now() - user.passwordResetLastResendAt.getTime();
+            if (elapsedMs < 45000) {
+                const remaining = Math.ceil((45000 - elapsedMs) / 1000);
+                throw new Error(`Please wait ${remaining}s before resending.`);
+            }
+        }
+
+        // Max 3 resends per reset flow
+        if ((user.passwordResetResendCount || 0) >= 3) {
+            throw new Error("Maximum resend attempts reached. Please request a new reset code.");
+        }
+
+        // Generate a new code and extend expiry to 10 minutes from now
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.passwordResetCode = verificationCode;
+        user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+        user.passwordResetResendCount = (user.passwordResetResendCount || 0) + 1;
+        user.passwordResetLastResendAt = new Date();
+        await user.save();
+
+        await emailService.sendPasswordResetCode(user.email, verificationCode, user.name);
+
+        return {
+            success: true,
+            message: "Verification code resent",
+            resendCount: user.passwordResetResendCount,
+            cooldownSeconds: 45
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
 // Export functions
 module.exports = {
     register,
@@ -535,5 +589,6 @@ module.exports = {
     requestPasswordReset,
     verifyResetCode,
     resetPassword,
-    validatePasswordPolicy
+    validatePasswordPolicy,
+    resendPasswordResetCode
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
 function ResetPassword() {
@@ -16,6 +17,8 @@ function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendTimeLeft, setResendTimeLeft] = useState(0);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordRequirements, setPasswordRequirements] = useState({
@@ -33,6 +36,21 @@ function ResetPassword() {
       setStep('password');
     }
   }, [searchParams]);
+
+  // resend cooldown timer
+  useEffect(() => {
+    if (!resendDisabled || resendTimeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setResendTimeLeft((t) => {
+        if (t <= 1) {
+          setResendDisabled(false);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendDisabled, resendTimeLeft]);
 
   const validatePassword = (password) => {
     const requirements = {
@@ -67,12 +85,15 @@ function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await axios.post('/request-password-reset', {
+      await axios.post('/request-password-reset', {
         email: email
       });
 
       setSuccess('Verification code sent to your email. Please check your inbox.');
       setStep('code');
+      // start cooldown immediately after first send
+      setResendDisabled(true);
+      setResendTimeLeft(45);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to send verification code');
     } finally {
@@ -123,7 +144,7 @@ function ResetPassword() {
     }
 
     try {
-      const response = await axios.post('/reset-password', {
+      await axios.post('/reset-password', {
         token: resetToken,
         newPassword: formData.newPassword
       });
@@ -136,6 +157,23 @@ function ResetPassword() {
       }, 3000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to reset password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const response = await axios.post('/resend-reset-code', { email });
+      if (response.data.success) {
+        setSuccess('Verification code resent. Please check your email.');
+        setResendDisabled(true);
+        setResendTimeLeft(45);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
@@ -227,6 +265,16 @@ function ResetPassword() {
                 {loading ? 'Verifying...' : 'Verify Code'}
               </button>
             </form>
+
+            <div className="text-center" style={{ marginTop: '20px' }}>
+              <button 
+                onClick={handleResend}
+                disabled={resendDisabled || loading}
+                className="btn btn-secondary"
+              >
+                {resendDisabled ? `Resend (${resendTimeLeft}s)` : 'Resend Code'}
+              </button>
+            </div>
             
             <div className="text-center" style={{ marginTop: '20px' }}>
               <button 
@@ -272,7 +320,7 @@ function ResetPassword() {
                   className="password-toggle"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showNewPassword ? "👁️" : "👁️‍🗨️"}
+                  {showNewPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
@@ -294,12 +342,11 @@ function ResetPassword() {
                   className="password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                  {showConfirmPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
 
-            {/* Password Requirements Display */}
             {formData.newPassword && (
               <div className="password-requirements">
                 <h4>Password requirements:</h4>

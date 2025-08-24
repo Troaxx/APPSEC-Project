@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const express = require('express');
+const helmet = require('helmet');
 const path = require("path");
 const fs = require("fs");
 const cookieParser = require("cookie-parser");
@@ -10,10 +11,24 @@ const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 
-const PORT = process.env.BACKEND_PORT || 3001;
-
 // Trust proxy for rate limiting
 app.set('trust proxy', 1);
+
+// Security headers with helmet
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://www.google.com"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://www.google.com"]
+        }
+    }
+}));
+
+const PORT = process.env.BACKEND_PORT || 3001;
 
 app.use(express.json());
 
@@ -38,8 +53,6 @@ app.use((req, res, next) => {
 
 // API routes - no prefix
 app.use('', userRouter);
-
-
 
 console.log(process.env.DB_CONNECT)
 

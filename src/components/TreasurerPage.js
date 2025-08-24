@@ -34,9 +34,6 @@ function TreasurerPage() {
           </div>
           
           <div className="d-flex gap-15 justify-center mt-30">
-            <Link to="/home" className="btn btn-primary">
-              Home
-            </Link>
             <Link to="/dashboard" className="btn btn-secondary">
               Dashboard
             </Link>

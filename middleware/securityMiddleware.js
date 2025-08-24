@@ -4,7 +4,7 @@ const axios = require('axios');
 //rate limiting for login attempts
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, // 20 attempts per IP per window (more reasonable)
+    max: 20, // 20 attempts per IP per window 
     message: {
         error: 'Too many login attempts from this IP. Please try again in 15 minutes.'
     },

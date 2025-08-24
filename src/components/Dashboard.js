@@ -55,24 +55,6 @@ function Dashboard() {
     }
   };
 
-  const handlePasswordChange = async () => {
-    setLoading(true);
-    setMessage('');
-    setError('');
-
-    try {
-      const response = await axios.post('/request-password-reset', {
-        email: user.email
-      });
-      setMessage('Password reset link sent to your email. Please check your inbox.');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send password reset email');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
 
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
@@ -116,34 +98,6 @@ function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Security Settings */}
-          <div className="content-card">
-            <div className="card-body">
-              <h3>Security Settings</h3>
-              <div className="mb-20">
-                <p><strong>Two-Factor Authentication:</strong></p>
-                <p style={{ color: '#28a745' }}>
-                  Always Enabled (Required for all logins)
-                </p>
-                <div className="info-card">
-                  <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                    For security, all logins require email verification. This cannot be disabled.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="security-features">
-                <h4>Security Features Active:</h4>
-                <ul>
-                  <li>Account lockout protection</li>
-                  <li>Password policy enforcement</li>
-                  <li>reCAPTCHA verification</li>
-                  <li>Session timeout (2 hours)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right Side - Role-Based Navigation */}
@@ -178,15 +132,6 @@ function Dashboard() {
                 )}
               </div>
               
-              <div className="text-center mt-30">
-                <button 
-                  onClick={handlePasswordChange}
-                  disabled={loading}
-                  className="btn btn-secondary"
-                >
-                  {loading ? 'Sending...' : 'Change Password'}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -195,7 +140,6 @@ function Dashboard() {
 
       {/* Footer */}
       <div className="page-footer">
-        <p>Your account is protected with advanced security features</p>
         <p>Last login: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
       </div>
     </div>

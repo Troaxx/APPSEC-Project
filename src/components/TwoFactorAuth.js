@@ -57,8 +57,8 @@ function TwoFactorAuth() {
     setError('');
     setLoading(true);
 
-    if (code.length !== 6) {
-      setError('Please enter a 6-digit verification code');
+    if (code.length !== 8) {
+      setError('Please enter a 8-digit verification code');
       setLoading(false);
       return;
     }
@@ -75,7 +75,7 @@ function TwoFactorAuth() {
 
   const handleCodeChange = (e) => {
     const value = e.target.value.replace(/\D/g, ''); // Only allow digits
-    if (value.length <= 6) {
+    if (value.length <= 8) {
       setCode(value);
     }
   };
@@ -120,7 +120,7 @@ function TwoFactorAuth() {
           {message && <div className="message info">{message}</div>}
           {error && <div className="message error">{error}</div>}
           
-          <p>Please enter the 6-digit verification code sent to your email:</p>
+          <p>Please enter the 8-digit verification code sent to your email:</p>
           
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -128,8 +128,8 @@ function TwoFactorAuth() {
                 type="text"
                 value={code}
                 onChange={handleCodeChange}
-                placeholder="000000"
-                maxLength="6"
+                placeholder="00000000"
+                maxLength="8"
                 className="verification-code-input"
                 required
               />

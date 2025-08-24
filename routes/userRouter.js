@@ -125,7 +125,7 @@ router.post("/verify-2fa", async (req, res) => {
     }
 });
 
-// Resend verification code route
+// Resend verification code route (login 2FA)
 router.post("/resend-verification", async (req, res) => {
     try {
         const { userId } = req.body;
@@ -139,6 +139,21 @@ router.post("/resend-verification", async (req, res) => {
         res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ error: error.message || "Failed to resend verification code" });
+    }
+});
+
+// Resend password reset code route
+router.post("/resend-reset-code", async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: "Email is required." });
+        }
+        const { resendPasswordResetCode } = require("../Controller/authFunctions");
+        const result = await resendPasswordResetCode(email);
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(400).json({ error: error.message || "Failed to resend code" });
     }
 });
 

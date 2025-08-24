@@ -57,7 +57,6 @@ export function AuthProvider({ children }) {
         
         if (window.grecaptcha && window.grecaptcha.execute) {
           console.log('reCAPTCHA loaded, executing...');
-          // Use your actual site key from environment
           const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
           console.log('Site key configured:', !!siteKey);
           
